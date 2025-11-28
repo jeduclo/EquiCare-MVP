@@ -1,0 +1,24 @@
+# Core Framework
+streamlit
+python-dotenv
+pyyaml
+
+# Database
+sqlalchemy
+
+# Authentication & Security
+bcrypt
+streamlit-authenticator
+cryptography
+
+# Audio Processing
+pydub
+soundfile
+
+# AI Services (OpenAI only for MVP)
+openai
+
+# Utilities
+pandas
+numpy
+pillow

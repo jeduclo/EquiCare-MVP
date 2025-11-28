@@ -1,0 +1,42 @@
+# EquiCare MVP Configuration
+
+app:
+  name: "EquiCare"
+  version: "1.0.0"
+  page_title: "EquiCare - Case Recording System"
+  page_icon: "🏥"
+  max_recording_duration: 7200  # 2 hours in seconds
+  warning_duration: 6300  # Warning at 1h 45min
+
+ai:
+  transcription:
+    service: "openai"
+    model: "whisper-1"
+    language: "en"  # Auto-detect if empty
+  
+  summarization:
+    service: "openai"
+    model: "gpt-4"
+    max_tokens: 1500
+    temperature: 0.3
+
+audio:
+  sample_rate: 16000
+  channels: 1
+  format: "wav"
+  max_file_size_mb: 500
+
+security:
+  max_login_attempts: 5
+  lockout_duration_minutes: 15
+  password_min_length: 8
+
+ui:
+  theme:
+    primary_color: "#1E3A8A"  # Navy Blue
+    background_color: "#FFFFFF"
+    secondary_background_color: "#F3F4F6"
+    text_color: "#1F2937"
+  
+  recording_button_color: "#1E3A8A"  # Navy Blue (changed from red)
+  success_color: "#10B981"  # Green
