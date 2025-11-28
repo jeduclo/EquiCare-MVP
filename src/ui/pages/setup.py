@@ -4,7 +4,7 @@ This page appears only when the database is empty
 """
 
 import streamlit as st
-from src.database.db_manager import init_database, get_db_session
+from src.database.db_manager import db_manager, get_db_session
 from src.database.models import User
 from src.auth.password_utils import hash_password
 from datetime import datetime
@@ -98,7 +98,7 @@ def show():
                 with st.spinner("🔄 Initializing database and creating admin account..."):
                     try:
                         # Initialize database
-                        init_database()
+                        db_manager.init_db()
                         
                         # Create admin user
                         with get_db_session() as session:
