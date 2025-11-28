@@ -136,6 +136,26 @@ def main():
     # Initialize session state
     init_session_state()
     
+    # Check if database needs setup (first time only)
+    needs_setup = False
+    if not st.session_state.authenticated and not st.session_state.get('setup_complete', False):
+        try:
+            from src.database.db_manager import get_db_session
+            from src.database.models import User
+            
+            with get_db_session() as session:
+                user_count = session.query(User).count()
+                needs_setup = user_count == 0
+        except Exception as e:
+            # If any error (no table, no database, etc.), we need setup
+            needs_setup = True
+        
+        if needs_setup:
+            # Show setup page
+            from src.ui.pages.setup import show as show_setup
+            show_setup()
+            return
+    
     # Check authentication
     if not st.session_state.authenticated:
         # Show login page
