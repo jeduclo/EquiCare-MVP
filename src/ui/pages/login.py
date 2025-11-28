@@ -3,6 +3,7 @@ Login page for user authentication
 """
 
 import streamlit as st
+import base64
 from datetime import datetime, timedelta
 from src.database.db_manager import get_db_session
 from src.database.models import User, AuditLog
@@ -10,13 +11,42 @@ from src.auth.password_utils import verify_password
 from src.config.settings import Settings
 
 
+def get_image_base64(image_path):
+    """Helper to convert image to base64 string for HTML embedding"""
+    try:
+        with open(image_path, "rb") as img_file:
+            return base64.b64encode(img_file.read()).decode()
+    except Exception:
+        return None
+
+
 def show_login_page():
     """Display the login page"""
     
-    # Center the login form
+    # Center the login form on the screen
     col1, col2, col3 = st.columns([1, 2, 1])
     
     with col2:
+        # Logo Section - Using HTML for perfect mobile/desktop centering
+        try:
+            from pathlib import Path
+            logo_path = Path(__file__).parent.parent.parent / "assets" / "logo.jpg"
+            
+            if logo_path.exists():
+                img_base64 = get_image_base64(logo_path)
+                if img_base64:
+                    # HTML allows us to force centering with Flexbox, which survives mobile stacking
+                    st.markdown(
+                        f"""
+                        <div style="display: flex; justify-content: center; margin-bottom: 20px;">
+                            <img src="data:image/jpg;base64,{img_base64}" width="250">
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
+        except Exception:
+            pass
+        
         # Logo and title
         st.markdown("<h1 style='text-align: center;'>🏥 EquiCare</h1>", unsafe_allow_html=True)
         st.markdown("<h3 style='text-align: center; color: #6B7280;'>Case Recording System</h3>", unsafe_allow_html=True)
@@ -40,7 +70,7 @@ def show_login_page():
                     st.error("Invalid username or password")
         
         # Info box
-        st.info("👤 **First time?** Use username: `admin` and password: `admin123`")
+        # st.info("👤 **First time?** Use username: `admin` and password: `admin123`")
 
 
 def authenticate_user(username: str, password: str) -> bool:

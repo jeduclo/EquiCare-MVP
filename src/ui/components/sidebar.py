@@ -9,6 +9,15 @@ def show_sidebar():
     """Display navigation sidebar and return selected page"""
     
     with st.sidebar:
+        # Logo
+        try:
+            from pathlib import Path
+            logo_path = Path(__file__).parent.parent.parent / "assets" / "logo.jpg"
+            if logo_path.exists():
+                st.image(str(logo_path), width=150)  # Smaller for sidebar
+        except:
+            pass
+        
         # Logo and app name
         st.markdown("# 🏥 EquiCare")
         st.markdown(f"**{st.session_state.full_name}**")
@@ -27,7 +36,7 @@ def show_sidebar():
             current_page = "home"
         
         # Navigation buttons with custom styling
-        # st.markdown("### Navigation")
+        st.markdown("### Navigation")
         
         # Custom CSS for button alignment and colors
         st.markdown("""
