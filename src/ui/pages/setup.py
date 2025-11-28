@@ -127,10 +127,10 @@ def show():
                         **⚠️ Please save these credentials!**
                         """)
                         
+                        # Set session state to show login page
+                        st.session_state.setup_complete = True
                         st.markdown("---")
-                        if st.button("🚀 Go to Login Page", type="primary", use_container_width=True):
-                            st.session_state.setup_complete = True
-                            st.rerun()
+                        st.info("🎉 Setup complete! Please refresh the page to login.")
                     
                     except Exception as e:
                         st.error(f"❌ Setup failed: {str(e)}")
