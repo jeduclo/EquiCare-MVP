@@ -22,3 +22,5 @@ openai
 pandas
 numpy
 pillow
+
+psycopg2-binary
