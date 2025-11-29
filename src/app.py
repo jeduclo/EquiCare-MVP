@@ -12,6 +12,8 @@ sys.path.insert(0, str(project_root))
 
 import streamlit as st
 from src.config.settings import Settings
+# NEW: Import the DB manager and seeding function
+from src.database.db_manager import db_manager, seed_admin_user
 
 # Configure page
 st.set_page_config(
@@ -136,7 +138,21 @@ def main():
     # Initialize session state
     init_session_state()
     
-    # Check if database needs setup (first time only)
+    # --- AUTOMATIC DATABASE INITIALIZATION ---
+    # This block ensures that when deployed to Supabase (fresh DB),
+    # the tables are created and the admin user is seeded AUTOMATICALLY.
+    try:
+        # Create tables if they don't exist
+        db_manager.init_db()
+        # Ensure default admin user exists
+        seed_admin_user()
+    except Exception as e:
+        # In case of DB connection errors, we log it but don't crash immediately
+        # to allow the error UI to show if needed
+        print(f"DB Init Warning: {e}")
+    # -----------------------------------------
+    
+    # Check if database needs setup (This will now likely be FALSE because we just seeded the admin)
     needs_setup = False
     if not st.session_state.authenticated and not st.session_state.get('setup_complete', False):
         try:

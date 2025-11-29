@@ -3,6 +3,7 @@ Database manager
 Handles database connections and provides query interface
 """
 
+import streamlit as st
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
 from contextlib import contextmanager
@@ -20,27 +21,57 @@ class DatabaseManager:
     
     def __init__(self):
         """Initialize database connection"""
-        # Create database URL
-        if Settings.DATABASE_URL.startswith('sqlite'):
-            # For SQLite, create full path
-            db_path = Settings.ROOT_DIR / Settings.DATABASE_URL.replace('sqlite:///', '')
-            db_url = f'sqlite:///{db_path}'
-        else:
-            db_url = Settings.DATABASE_URL
         
-        # Create engine
+        # 1. Check for Streamlit Secrets (Production/Supabase)
+        # We look for the [connections.supabase] section in secrets.toml
+        if "connections" in st.secrets and "supabase" in st.secrets["connections"]:
+            try:
+                secrets = st.secrets["connections"]["supabase"]
+                # Construct the PostgreSQL connection string
+                # We use postgresql:// for SQLAlchemy compatibility
+                self.db_url = f"postgresql://{secrets['username']}:{secrets['password']}@{secrets['host']}:{secrets['port']}/{secrets['database']}"
+                self.is_sqlite = False
+                logger.info("Using Supabase PostgreSQL connection")
+            except KeyError as e:
+                logger.error(f"Missing key in secrets: {e}")
+                raise
+        
+        # 2. Fallback to Settings (Local Development/SQLite)
+        else:
+            if Settings.DATABASE_URL.startswith('sqlite'):
+                # For SQLite, create full path
+                db_path = Settings.ROOT_DIR / Settings.DATABASE_URL.replace('sqlite:///', '')
+                self.db_url = f'sqlite:///{db_path}'
+                self.is_sqlite = True
+            else:
+                self.db_url = Settings.DATABASE_URL
+                self.is_sqlite = False
+            logger.info(f"Using Local connection: {self.db_url}")
+        
+        # 3. Create engine with specific arguments based on DB type
+        connect_args = {}
+        engine_args = {
+            "echo": Settings.DEBUG_MODE
+        }
+
+        if self.is_sqlite:
+            # SQLite specific args
+            connect_args['check_same_thread'] = False
+        else:
+            # PostgreSQL/Supabase specific args
+            # pool_pre_ping=True helps prevent "connection closed" errors in cloud
+            engine_args['pool_pre_ping'] = True
+
         self.engine = create_engine(
-            db_url,
-            echo=Settings.DEBUG_MODE,
-            connect_args={'check_same_thread': False} if 'sqlite' in db_url else {}
+            self.db_url,
+            connect_args=connect_args,
+            **engine_args
         )
         
         # Create session factory
         self.session_factory = sessionmaker(bind=self.engine)
         self.Session = scoped_session(self.session_factory)
         
-        logger.info(f"Database initialized: {db_url}")
-    
     def create_tables(self):
         """Create all tables defined in models"""
         Base.metadata.create_all(self.engine)
@@ -84,3 +115,28 @@ db_manager = DatabaseManager()
 def get_db_session():
     """Get a database session (context manager)"""
     return db_manager.get_session()
+
+# --- HELPER TO CREATE ADMIN USER ---
+# Run this function once from your Home.py or a temporary script
+def seed_admin_user():
+    from src.database.models import User
+    from src.auth.password_utils import get_password_hash # Assuming you have this
+    
+    with get_db_session() as session:
+        # Check if admin already exists
+        existing_admin = session.query(User).filter_by(username="admin").first()
+        
+        if not existing_admin:
+            logger.info("Creating default admin user...")
+            admin_user = User(
+                username="admin",
+                full_name="System Administrator",
+                role="administrator",
+                # You must verify this matches your password hashing function
+                password_hash=get_password_hash("admin123"), 
+                is_active=True
+            )
+            session.add(admin_user)
+            logger.info("Admin user created: admin / admin123")
+        else:
+            logger.info("Admin user already exists.")
