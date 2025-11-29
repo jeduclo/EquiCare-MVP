@@ -61,6 +61,12 @@ class DatabaseManager:
             # PostgreSQL/Supabase specific args
             # pool_pre_ping=True helps prevent "connection closed" errors in cloud
             engine_args['pool_pre_ping'] = True
+            
+            # --- CRITICAL FIX FOR SUPABASE TRANSACTION POOLER (Port 6543) ---
+            # The Transaction Pooler does not support prepared statements.
+            # Setting prepare_threshold to None disables them in psycopg2.
+            connect_args["prepare_threshold"] = None
+            # ----------------------------------------------------------------
 
         self.engine = create_engine(
             self.db_url,
@@ -116,8 +122,9 @@ def get_db_session():
     """Get a database session (context manager)"""
     return db_manager.get_session()
 
+
 # --- HELPER TO CREATE ADMIN USER ---
-# Run this function once from your Home.py or a temporary script
+# This is called from app.py to ensure an admin exists on fresh deployments
 def seed_admin_user():
     from src.database.models import User
     from src.auth.password_utils import get_password_hash # Assuming you have this
